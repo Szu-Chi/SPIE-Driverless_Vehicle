@@ -46,6 +46,68 @@ double g_currentEnergy = 0;
 /*----------------------*/
 /*---------APPS---------*/
 /*----------------------*/
+/*
+
+    Accelerator Pedal Position Sensor(APPS)
+                     |
+                     |
+                     ↓
+                     
+          ------------------------            --------------------------                -------------------------- 
+         |          APPS          |          |           APPS           |              |           APPS           | 
+         |      Normal Status     |          |   Press Forward Pedal    |              |   Press Reverse Pedal    | 
+         |------------------------|          |--------------------------|              |--------------------------| 
+         |                        |          |                   /      |              |                          | 
+         |                        |          |         Reverse  /       |              |     \                    | 
+         |                        |          |                 / \      |              |      \  Forward          | 
+         |  Forward      Reverse  |          |                /   \     |              |     / \                  | 
+         |   —————        —————   |          |                     \    |              |    /   \                 | 
+         |     \           /      |          |                      \   |              |   /                      | 
+         |      \         /       |          |                      /   |              |  /                       | 
+         |       \       /        |          |             /       o    |              |  \                       | 
+         |        \——o——/         |          |            /       /     |              |   o       \              | 
+         |                        |          | Forward   / ￣￣￣       |              |    \       \             | 
+         |                        |          |          /               |              |      ￣￣￣ \  Reverse   | 
+         |                        |          |                          |              |              \           |
+          ------------------------            --------------------------                --------------------------
+
+
+    APPS Signal
+    
+                Press Forward Pedal
+                         ↓
+        V                    
+        ↑                    
+        |                   
+   VMax |                 -------- 
+        |                /        \         
+        | ---------------          ---------           ---------
+        |                                   \         /
+   VMin |                                    --------- 
+        --------------------------------------------------------------→ t
+              ↑                             ↑
+        Normal Status               Press Reverse Pedal     
+        
+        
+        PowPin(PWM duty cycle)
+        ↑
+        |
+        |
+   100% |   ————————                              ———————————   
+        |           \                            /
+        |            \                          /
+        |             \                        /
+        |              \                      /
+        |               \                    /
+        |                \                  /
+        |                 \                /
+        |                  \              /
+     0% |                    ————————————
+        --------------------------------------------------→ APPS Signal
+                    ↑        ↑    ↑     ↑        ↑ 
+                  VMin      VTL   V0   VTH     VMax
+        
+*/
 #define APPSPin  A0
 #define V0 2.3
 #define VMax 5
@@ -87,33 +149,33 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-	double APPSVal = analogRead(APPSPin)/1023.0 * 5;// analog Value(0~1023) to Voltage(0~5V)
-	static int steering = 0;
-	int powerVal = getPowVal(APPSVal)/100*255;
-	Serial.print(powerVal);
-	Serial.print("  ");
-	Serial.println(APPSVal);
-	
-	if(APPSVal > VTH){
-    if(steering == 1){
-      analogWrite(PowPin, 0);  
-      delay(500);
-    } 
-    steering = 2;
-  	analogWrite(PowPin, powerVal);  
-    digitalWrite(DirPin, HIGH);
-	}else if(APPSVal < VTL){
-		if(steering == 2){
-		  analogWrite(PowPin, 0);  
-      delay(500);
-    } 
-    steering = 1;
-    analogWrite(PowPin, powerVal);	
-		digitalWrite(DirPin, LOW);
-	}else{
-    if(steering != 0) delay(500);
-    steering = 0;
-		analogWrite(PowPin, 0);
-	}
+    double APPSVal = analogRead(APPSPin)/1023.0 * 5;// analog Value(0~1023) to Voltage(0~5V)
+    static int steering = 0;
+    int powerVal = getPowVal(APPSVal)/100*255;
+    Serial.print(powerVal);
+    Serial.print("  ");
+    Serial.println(APPSVal);
+    
+    if(APPSVal > VTH){
+        if(steering == 1){
+          analogWrite(PowPin, 0);  
+          delay(500);
+        } 
+        steering = 2;
+        analogWrite(PowPin, powerVal);  
+        digitalWrite(DirPin, HIGH);
+    }else if(APPSVal < VTL){
+        if(steering == 2){
+          analogWrite(PowPin, 0);  
+          delay(500);
+        } 
+        steering = 1;
+        analogWrite(PowPin, powerVal);	
+        digitalWrite(DirPin, LOW);
+    }else{
+        if(steering != 0) delay(500);
+        steering = 0;
+        analogWrite(PowPin, 0);
+    }
  
 }
